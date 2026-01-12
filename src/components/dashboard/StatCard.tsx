@@ -10,6 +10,7 @@ interface StatCardProps {
   icon: ReactNode;
   variant?: 'default' | 'income' | 'expense';
   delay?: number;
+  onClick?: () => void;
 }
 
 export function StatCard({ 
@@ -18,7 +19,8 @@ export function StatCard({
   change, 
   icon, 
   variant = 'default',
-  delay = 0 
+  delay = 0,
+  onClick
 }: StatCardProps) {
   const isPositive = change !== undefined && change >= 0;
 
@@ -27,10 +29,12 @@ export function StatCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
+      onClick={onClick}
       className={cn(
         'stat-card',
         variant === 'income' && 'stat-card-income',
-        variant === 'expense' && 'stat-card-expense'
+        variant === 'expense' && 'stat-card-expense',
+        onClick && 'cursor-pointer hover:scale-[1.02] transition-transform'
       )}
     >
       <div className="flex items-start justify-between mb-4">

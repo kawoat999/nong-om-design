@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { BalanceChart } from '@/components/dashboard/BalanceChart';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Balance" value={formatCurrency(totalBalance)} icon={<Wallet className="w-6 h-6" />} delay={0} />
         <StatCard title="Monthly Income" value={formatCurrency(totalIncome)} icon={<TrendingUp className="w-6 h-6" />} variant="income" delay={0.1} />
-        <StatCard title="Monthly Expenses" value={formatCurrency(totalExpenses)} icon={<TrendingDown className="w-6 h-6" />} variant="expense" delay={0.15} />
+        <StatCard title="Monthly Expenses" value={formatCurrency(totalExpenses)} icon={<TrendingDown className="w-6 h-6" />} variant="expense" delay={0.15} onClick={() => navigate('/transactions')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
