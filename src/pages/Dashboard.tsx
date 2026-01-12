@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [incomeDialogOpen, setIncomeDialogOpen] = useState(false);
 
   const fetchTransactions = async () => {
     if (!user) return;
@@ -60,7 +61,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Balance" value={formatCurrency(totalBalance)} icon={<Wallet className="w-6 h-6" />} delay={0} />
-        <StatCard title="Monthly Income" value={formatCurrency(totalIncome)} icon={<TrendingUp className="w-6 h-6" />} variant="income" delay={0.1} />
+        <StatCard 
+          title="Monthly Income" 
+          value={formatCurrency(totalIncome)} 
+          icon={<TrendingUp className="w-6 h-6" />} 
+          variant="income" 
+          delay={0.1} 
+          onClick={() => setIncomeDialogOpen(true)} 
+        />
         <StatCard 
           title="Monthly Expenses" 
           value={formatCurrency(totalExpenses)} 
@@ -71,11 +79,18 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Hidden dialog for adding expenses */}
+      {/* Hidden dialogs for adding transactions */}
       <AddTransactionDialog 
         open={expenseDialogOpen} 
         onOpenChange={setExpenseDialogOpen} 
         defaultType="expense"
+        onSuccess={fetchTransactions}
+        trigger={null}
+      />
+      <AddTransactionDialog 
+        open={incomeDialogOpen} 
+        onOpenChange={setIncomeDialogOpen} 
+        defaultType="income"
         onSuccess={fetchTransactions}
         trigger={null}
       />
