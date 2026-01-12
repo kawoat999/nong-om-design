@@ -92,10 +92,10 @@ export default function Landing() {
             transition={{ duration: 0.5 }}
             className="text-center max-w-3xl mx-auto"
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6 text-red-500">
               Take Control of
               <br />
-              <span className="text-primary">Your Money</span>
+              <span className="text-red-600">Your Money</span>
             </h1>
             
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl mx-auto">
