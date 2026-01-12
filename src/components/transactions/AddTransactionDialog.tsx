@@ -45,10 +45,24 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 interface AddTransactionDialogProps {
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultType?: TransactionType;
+  trigger?: React.ReactNode;
 }
 
-export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddTransactionDialog({ 
+  onSuccess, 
+  open: controlledOpen, 
+  onOpenChange: controlledOnOpenChange,
+  defaultType = 'expense',
+  trigger 
+}: AddTransactionDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
+  
   const [date, setDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
@@ -64,11 +78,21 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      type: 'expense',
+      type: defaultType,
     },
   });
 
+  // Update form when defaultType changes (for controlled mode)
   const transactionType = watch('type');
+  
+  // Reset type when dialog opens with a specific defaultType
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) {
+      setValue('type', defaultType);
+    }
+    setOpen(newOpen);
+  };
+
 
   const incomeCategories: CategoryType[] = ['salary', 'freelance', 'investment', 'other'];
   const expenseCategories: CategoryType[] = ['housing', 'food', 'transport', 'utilities', 'entertainment', 'shopping', 'healthcare', 'other'];
@@ -112,13 +136,17 @@ export function AddTransactionDialog({ onSuccess }: AddTransactionDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4" />
-          Add Transaction
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger !== undefined ? (
+        trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>
+      ) : (
+        <DialogTrigger asChild>
+          <Button className="gap-2 bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4" />
+            Add Transaction
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Transaction</DialogTitle>
