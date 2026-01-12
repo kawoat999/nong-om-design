@@ -1,36 +1,41 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, PieChart, Target, Shield, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { Wallet, TrendingUp, PieChart, Target, Shield, ArrowRight, CheckCircle2, Users, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const features = [
   {
     icon: TrendingUp,
-    title: 'Track Spending',
-    description: 'See where your money goes with clear, simple charts.',
+    title: 'Track Every Baht',
+    description: 'Log your income and expenses in seconds. See exactly where your money goes each month with clear, visual reports.',
   },
   {
     icon: PieChart,
-    title: 'Set Budgets',
-    description: 'Create monthly budgets and get alerts when you overspend.',
+    title: 'Smart Budgeting',
+    description: 'Set monthly budgets for food, transport, shopping, and more. Get notified before you overspend.',
   },
   {
     icon: Target,
-    title: 'Save for Goals',
-    description: 'Set savings goals and watch your progress grow.',
+    title: 'Reach Your Goals',
+    description: 'Saving for a trip? A new phone? Set goals and track your progress with beautiful visual indicators.',
   },
   {
     icon: Shield,
-    title: 'Safe & Secure',
-    description: 'Your data is encrypted and always protected.',
+    title: 'Private & Secure',
+    description: 'Your financial data stays private. We use bank-level encryption to keep your information safe.',
   },
 ];
 
-const benefits = [
-  'Free to use',
-  'No credit card required',
-  'Works on all devices',
-  'Simple setup in 2 minutes',
+const steps = [
+  { number: '01', title: 'Sign Up Free', description: 'Create your account in under a minute. No credit card needed.' },
+  { number: '02', title: 'Add Transactions', description: 'Log your income and expenses as they happen.' },
+  { number: '03', title: 'See Insights', description: 'Get a clear picture of your spending habits and savings.' },
+];
+
+const testimonials = [
+  { name: 'Somchai', quote: 'Finally, a simple way to track my spending. I saved 3,000 baht in my first month!' },
+  { name: 'Ploy', quote: 'I love how easy it is to use. Now I know exactly where my money goes.' },
+  { name: 'Bank', quote: 'The budget alerts help me stay on track. Best finance app I have used.' },
 ];
 
 const container = {
@@ -48,7 +53,7 @@ const item = {
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50">
         <div className="max-w-6xl mx-auto px-6">
@@ -59,6 +64,11 @@ export default function Landing() {
               </div>
               <span className="text-lg font-bold tracking-tight">Nong Om</span>
             </div>
+            <nav className="hidden md:flex items-center gap-8">
+              <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+              <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
+              <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Reviews</a>
+            </nav>
             <div className="flex items-center gap-2">
               <Link to="/auth">
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
@@ -74,117 +84,88 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-28 pb-16 px-6">
+      <section className="pt-32 pb-20 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center max-w-2xl mx-auto"
+            className="text-center max-w-3xl mx-auto"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-              <Sparkles className="w-3.5 h-3.5" />
-              Personal Finance Made Simple
-            </div>
-            
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight mb-5">
-              Manage Your Money
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+              Take Control of
               <br />
-              <span className="text-primary">Without the Stress</span>
+              <span className="text-primary">Your Money</span>
             </h1>
             
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg mx-auto">
-              Track your spending, set budgets, and reach your savings goals — all in one beautiful, easy-to-use app.
+            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl mx-auto">
+              The simple way to track spending, set budgets, and save for your goals. Start for free today.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
               <Link to="/auth">
-                <Button size="lg" className="gap-2 px-6 shadow-md hover:shadow-lg transition-shadow">
+                <Button size="lg" className="gap-2 px-8 h-12 text-base shadow-lg hover:shadow-xl transition-shadow">
                   Start Free <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
+              <a href="#features">
+                <Button variant="outline" size="lg" className="px-8 h-12 text-base">
+                  Learn More
+                </Button>
+              </a>
             </div>
 
-            {/* Benefits */}
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-              {benefits.map((benefit) => (
-                <div key={benefit} className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                  <span>{benefit}</span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Dashboard Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 32 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-14"
-          >
-            <div className="relative mx-auto max-w-4xl">
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent blur-3xl opacity-40 -z-10" />
-              
-              <div className="bg-card border border-border/60 rounded-2xl shadow-xl overflow-hidden">
-                <div className="bg-muted/30 px-4 py-3 border-b border-border/50 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-400/70" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
-                  <div className="w-3 h-3 rounded-full bg-green-400/70" />
-                  <span className="ml-3 text-xs text-muted-foreground">Dashboard</span>
-                </div>
-                
-                <div className="p-5 sm:p-6">
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
-                    <div className="bg-muted/40 rounded-xl p-3 sm:p-4">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Balance</p>
-                      <p className="text-lg sm:text-xl font-bold">$12,450</p>
-                    </div>
-                    <div className="bg-muted/40 rounded-xl p-3 sm:p-4">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Income</p>
-                      <p className="text-lg sm:text-xl font-bold text-income">$5,200</p>
-                    </div>
-                    <div className="bg-muted/40 rounded-xl p-3 sm:p-4">
-                      <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Expenses</p>
-                      <p className="text-lg sm:text-xl font-bold text-expense">$3,150</p>
-                    </div>
-                  </div>
-                  
-                  {/* Chart Area */}
-                  <div className="bg-muted/30 rounded-xl p-4 h-36 sm:h-44 flex items-end justify-center gap-2 sm:gap-3">
-                    {[35, 55, 40, 70, 50, 85, 60, 45, 75].map((height, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        transition={{ duration: 0.4, delay: 0.4 + i * 0.05 }}
-                        className="w-5 sm:w-8 bg-primary/70 rounded-t-md"
-                      />
-                    ))}
-                  </div>
-                </div>
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>Free forever</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>No credit card</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>2-min setup</span>
               </div>
             </div>
           </motion.div>
         </div>
       </section>
 
+      {/* Social Proof Bar */}
+      <section className="py-8 px-6 border-y border-border/50 bg-muted/20">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-8 sm:gap-16">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            <span className="text-sm"><strong className="text-foreground">1,000+</strong> <span className="text-muted-foreground">active users</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary fill-primary" />
+            <span className="text-sm"><strong className="text-foreground">4.9/5</strong> <span className="text-muted-foreground">user rating</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            <span className="text-sm"><strong className="text-foreground">฿50M+</strong> <span className="text-muted-foreground">tracked</span></span>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section className="py-16 px-6 bg-muted/20">
-        <div className="max-w-5xl mx-auto">
+      <section id="features" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="text-center mb-12"
+            className="text-center mb-16"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              Simple Tools for Smart Money
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Everything You Need
             </h2>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Everything you need to understand and manage your finances.
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+              Simple tools to help you understand your money and make smarter decisions.
             </p>
           </motion.div>
 
@@ -193,43 +174,122 @@ export default function Landing() {
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8"
           >
             {features.map((feature) => (
               <motion.div
                 key={feature.title}
                 variants={item}
-                className="bg-card border border-border/50 rounded-xl p-5 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+                className="flex gap-5 p-6 bg-card border border-border/50 rounded-2xl hover:border-primary/30 hover:shadow-lg transition-all duration-300"
               >
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                  <feature.icon className="w-5 h-5 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <feature.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-sm mb-1.5">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                </div>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 px-6">
-        <div className="max-w-2xl mx-auto text-center">
+      {/* How It Works Section */}
+      <section id="how-it-works" className="py-20 px-6 bg-muted/30">
+        <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
-            className="bg-gradient-to-br from-primary/5 via-card to-accent/5 border border-border/50 rounded-2xl p-8 sm:p-10"
+            className="text-center mb-16"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              Start Managing Your Money Today
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              How It Works
             </h2>
-            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Join thousands of users who are taking control of their finances with Nong Om.
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+              Get started in minutes. No complicated setup required.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-5xl font-bold text-primary/20 mb-4">{step.number}</div>
+                <h3 className="font-semibold text-xl mb-2">{step.title}</h3>
+                <p className="text-muted-foreground">{step.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Loved by Users
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto">
+              See what people are saying about Nong Om.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="p-6 bg-card border border-border/50 rounded-2xl"
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-primary fill-primary" />
+                  ))}
+                </div>
+                <p className="text-foreground mb-4 leading-relaxed">"{testimonial.quote}"</p>
+                <p className="text-sm font-medium text-muted-foreground">— {testimonial.name}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-6 bg-primary/5">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4 }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Ready to Take Control?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto">
+              Join thousands of people who are already managing their money smarter with Nong Om.
             </p>
             <Link to="/auth">
-              <Button size="lg" className="gap-2 px-6 shadow-md">
+              <Button size="lg" className="gap-2 px-8 h-12 text-base shadow-lg">
                 Get Started Free <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
@@ -238,17 +298,24 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-6 px-6 border-t border-border/50">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-              <Wallet className="w-3.5 h-3.5 text-primary-foreground" />
+      <footer className="py-10 px-6 border-t border-border/50 bg-muted/10">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="font-semibold">Nong Om</span>
             </div>
-            <span className="font-semibold text-sm">Nong Om</span>
+            <nav className="flex items-center gap-6 text-sm text-muted-foreground">
+              <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+              <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
+              <a href="#testimonials" className="hover:text-foreground transition-colors">Reviews</a>
+            </nav>
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Nong Om. All rights reserved.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Nong Om. All rights reserved.
-          </p>
         </div>
       </footer>
     </div>
