@@ -21,14 +21,19 @@ export default function Dashboard() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('File selected:', file);
     if (file) {
       setSelectedFile(file);
+      console.log('File type:', file.type);
       // Create preview URL for images
       if (file.type.startsWith('image/')) {
         const url = URL.createObjectURL(file);
+        console.log('Preview URL created:', url);
         setPreviewUrl(url);
+      } else {
+        // Clear preview for non-image files
+        setPreviewUrl(null);
       }
-      console.log('Selected file:', file.name);
     }
   };
 
