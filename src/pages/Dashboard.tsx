@@ -1,15 +1,43 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, FileUp, Sparkles, ChevronRight, X } from 'lucide-react';
+import { Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays, Tag, ArrowDownCircle, ArrowUpCircle, FileText, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import nongOmLogo from '@/assets/nong-om-logo.png';
+import { format } from 'date-fns';
+import { th } from 'date-fns/locale';
+
+// Category emoji mapping
+const categoryEmojis: Record<string, string> = {
+  housing: '🏠',
+  food: '🍔',
+  transport: '🚗',
+  utilities: '💡',
+  entertainment: '🎬',
+  shopping: '🛍️',
+  healthcare: '🏥',
+  salary: '💰',
+  freelance: '💼',
+  investment: '📈',
+  other: '📋',
+};
+
+interface TransactionResult {
+  date: Date;
+  itemName: string;
+  category: string;
+  type: 'income' | 'expense';
+  amount: number;
+  notes?: string;
+}
 
 export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [savedTransaction, setSavedTransaction] = useState<TransactionResult | null>(null);
   const previewCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -66,8 +94,33 @@ export default function Dashboard() {
   const handleAnalyze = () => {
     if (selectedFile) {
       console.log('Analyzing file:', selectedFile.name);
-      // TODO: Implement OCR/analysis
+      // Mock result - TODO: Replace with actual OCR/AI analysis
+      const mockResult: TransactionResult = {
+        date: new Date(),
+        itemName: 'ค่าอาหารกลางวัน',
+        category: 'food',
+        type: 'expense',
+        amount: 150,
+        notes: 'จากใบเสร็จ: ' + selectedFile.name,
+      };
+      setSavedTransaction(mockResult);
+      setShowSuccess(true);
+      // Clean up
+      handleCancel();
     }
+  };
+
+  const handleAddNewReceipt = () => {
+    setShowSuccess(false);
+    setSavedTransaction(null);
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB',
+      minimumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
@@ -131,7 +184,7 @@ export default function Dashboard() {
       <main
         className={cn(
           'flex-1 min-h-0 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto',
-          selectedFile ? 'justify-start' : 'justify-center'
+          (selectedFile || showSuccess) ? 'justify-start' : 'justify-center'
         )}
       >
         {/* Hidden file inputs */}
@@ -151,129 +204,276 @@ export default function Dashboard() {
           onChange={handleFileChange}
         />
 
-        {/* Instruction Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="w-full max-w-sm bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30 mb-2"
-        >
-          <p className="text-white text-center text-sm leading-relaxed">
-            📸 ถ่ายรูปใบเสร็จหรือเลือกไฟล์เพื่อบันทึกรายจ่ายของคุณอัตโนมัติ
-          </p>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="w-full max-w-sm space-y-3">
-          {/* Camera Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5, type: "spring" }}
-          >
-            <Button
-              onClick={handleOpenCamera}
-              className={cn(
-                "w-full h-14 text-base font-semibold rounded-2xl",
-                "bg-white/90 hover:bg-white",
-                "text-primary shadow-xl",
-                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                "flex items-center justify-between px-5"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Camera className="w-5 h-5 text-primary" />
-                </div>
-                <span>ถ่ายรูป</span>
-              </div>
-              <ChevronRight className="w-5 h-5 opacity-50" />
-            </Button>
-          </motion.div>
-
-          {/* File Button */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6, type: "spring" }}
-          >
-            <Button
-              onClick={handleOpenFile}
-              className={cn(
-                "w-full h-14 text-base font-semibold rounded-2xl",
-                "bg-yellow-400/90 hover:bg-yellow-400",
-                "text-gray-900 shadow-xl",
-                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                "flex items-center justify-between px-5"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-yellow-600/20 flex items-center justify-center">
-                  <FileUp className="w-5 h-5 text-gray-900" />
-                </div>
-                <span>เลือกไฟล์</span>
-              </div>
-              <ChevronRight className="w-5 h-5 opacity-50" />
-            </Button>
-          </motion.div>
-        </div>
-
-        {/* Selected File Preview */}
-        <AnimatePresence>
-          {selectedFile && (
+        <AnimatePresence mode="wait">
+          {showSuccess && savedTransaction ? (
+            /* Success Page */
             <motion.div
-              ref={previewCardRef}
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-sm mt-4 bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30"
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-sm flex flex-col items-center"
             >
-              {/* Image Preview */}
-              {previewUrl ? (
-                <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
-                  <img 
-                    src={previewUrl} 
-                    alt="Preview" 
-                    className="w-full h-48 object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="mb-4 rounded-xl overflow-hidden bg-white/10 h-48 flex items-center justify-center">
-                  <p className="text-white/60 text-sm">ไม่สามารถแสดงตัวอย่างไฟล์นี้ได้</p>
-                </div>
-              )}
+              {/* Success Icon */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', delay: 0.1 }}
+                className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4"
+              >
+                <CheckCircle2 className="w-12 h-12 text-green-400" />
+              </motion.div>
               
-              <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
-              <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
-              
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold text-white mb-6"
+              >
+                บันทึกสำเร็จ!
+              </motion.h2>
+
+              {/* Transaction Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="w-full bg-white/20 backdrop-blur-lg rounded-2xl p-5 border border-white/30 space-y-4"
+              >
+                {/* Date */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <CalendarDays className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">วันที่</p>
+                    <p className="text-white font-medium">
+                      {format(savedTransaction.date, 'd MMMM yyyy', { locale: th })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Item Name */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">รายการ</p>
+                    <p className="text-white font-medium">{savedTransaction.itemName}</p>
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-xl">
+                    {categoryEmojis[savedTransaction.category] || '📋'}
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">หมวดหมู่</p>
+                    <p className="text-white font-medium capitalize">{savedTransaction.category}</p>
+                  </div>
+                </div>
+
+                {/* Type */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    {savedTransaction.type === 'income' ? (
+                      <ArrowDownCircle className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <ArrowUpCircle className="w-5 h-5 text-red-400" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">ประเภท</p>
+                    <p className={cn(
+                      "font-medium",
+                      savedTransaction.type === 'income' ? 'text-green-400' : 'text-red-400'
+                    )}>
+                      {savedTransaction.type === 'income' ? 'รายรับ' : 'รายจ่าย'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Tag className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white/60 text-xs">จำนวนเงิน</p>
+                    <p className="text-xl font-bold" style={{ color: '#F59E0B' }}>
+                      {formatCurrency(savedTransaction.amount)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                {savedTransaction.notes && (
+                  <div className="pt-3 border-t border-white/20">
+                    <p className="text-white/60 text-xs mb-1">หมายเหตุ</p>
+                    <p className="text-white/90 text-sm">{savedTransaction.notes}</p>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Add New Receipt Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="w-full mt-6"
+              >
+                <Button
+                  onClick={handleAddNewReceipt}
+                  className={cn(
+                    "w-full h-14 text-base font-semibold rounded-2xl",
+                    "bg-white/90 hover:bg-white",
+                    "text-primary shadow-xl",
+                    "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                    "flex items-center justify-center gap-3"
+                  )}
+                >
+                  <Plus className="w-5 h-5" />
+                  เพิ่มใบเสร็จใหม่
+                </Button>
+              </motion.div>
+            </motion.div>
+          ) : (
+            /* Upload UI */
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full max-w-sm flex flex-col items-center"
+            >
+              {/* Instruction Card */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="w-full bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30 mb-4"
+              >
+                <p className="text-white text-center text-sm leading-relaxed">
+                  📸 ถ่ายรูปใบเสร็จหรือเลือกไฟล์เพื่อบันทึกรายจ่ายของคุณอัตโนมัติ
+                </p>
+              </motion.div>
+
               {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className={cn(
-                    "flex-1 h-11 rounded-xl font-semibold",
-                    "bg-transparent border-2 border-destructive/60 text-destructive",
-                    "hover:bg-destructive/10 hover:border-destructive/80",
-                    "transition-all duration-200"
-                  )}
+              <div className="w-full space-y-3">
+                {/* Camera Button */}
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, type: "spring" }}
                 >
-                  <X className="w-4 h-4 mr-2" />
-                  ยกเลิก
-                </Button>
-                <Button
-                  onClick={handleAnalyze}
-                  className={cn(
-                    "flex-1 h-11 rounded-xl font-semibold",
-                    "bg-white/90 hover:bg-white text-primary",
-                    "shadow-lg hover:shadow-xl",
-                    "transition-all duration-200"
-                  )}
+                  <Button
+                    onClick={handleOpenCamera}
+                    className={cn(
+                      "w-full h-14 text-base font-semibold rounded-2xl",
+                      "bg-white/90 hover:bg-white",
+                      "text-primary shadow-xl",
+                      "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                      "flex items-center justify-between px-5"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Camera className="w-5 h-5 text-primary" />
+                      </div>
+                      <span>ถ่ายรูป</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 opacity-50" />
+                  </Button>
+                </motion.div>
+
+                {/* File Button */}
+                <motion.div
+                  initial={{ opacity: 0, x: 30 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6, type: "spring" }}
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  วิเคราะห์
-                </Button>
+                  <Button
+                    onClick={handleOpenFile}
+                    className={cn(
+                      "w-full h-14 text-base font-semibold rounded-2xl",
+                      "bg-yellow-400/90 hover:bg-yellow-400",
+                      "text-gray-900 shadow-xl",
+                      "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                      "flex items-center justify-between px-5"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-yellow-600/20 flex items-center justify-center">
+                        <FileUp className="w-5 h-5 text-gray-900" />
+                      </div>
+                      <span>เลือกไฟล์</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 opacity-50" />
+                  </Button>
+                </motion.div>
               </div>
+
+              {/* Selected File Preview */}
+              <AnimatePresence>
+                {selectedFile && (
+                  <motion.div
+                    ref={previewCardRef}
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="w-full mt-4 bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30"
+                  >
+                    {/* Image Preview */}
+                    {previewUrl ? (
+                      <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
+                        <img 
+                          src={previewUrl} 
+                          alt="Preview" 
+                          className="w-full h-48 object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="mb-4 rounded-xl overflow-hidden bg-white/10 h-48 flex items-center justify-center">
+                        <p className="text-white/60 text-sm">ไม่สามารถแสดงตัวอย่างไฟล์นี้ได้</p>
+                      </div>
+                    )}
+                    
+                    <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
+                    <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={handleCancel}
+                        variant="outline"
+                        className={cn(
+                          "flex-1 h-11 rounded-xl font-semibold",
+                          "bg-transparent border-2 border-destructive/60 text-destructive",
+                          "hover:bg-destructive/10 hover:border-destructive/80",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        ยกเลิก
+                      </Button>
+                      <Button
+                        onClick={handleAnalyze}
+                        className={cn(
+                          "flex-1 h-11 rounded-xl font-semibold",
+                          "bg-white/90 hover:bg-white text-primary",
+                          "shadow-lg hover:shadow-xl",
+                          "transition-all duration-200"
+                        )}
+                      >
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        วิเคราะห์
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
