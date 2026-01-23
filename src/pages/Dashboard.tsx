@@ -1,106 +1,113 @@
-import { useEffect, useState } from 'react';
-import { Wallet, TrendingUp, TrendingDown } from 'lucide-react';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { BalanceChart } from '@/components/dashboard/BalanceChart';
-import { ExpensesPieChart } from '@/components/dashboard/ExpensesPieChart';
-import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
-import { AddTransactionDialog } from '@/components/transactions/AddTransactionDialog';
-import { Transaction } from '@/types/finance';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useRef } from 'react';
+import { Camera, FileUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 export default function Dashboard() {
-  const { user } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
-  const [incomeDialogOpen, setIncomeDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchTransactions = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('date', { ascending: false });
-    setTransactions((data as Transaction[]) || []);
-    setLoading(false);
+  const handleOpenCamera = () => {
+    cameraInputRef.current?.click();
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [user]);
+  const handleOpenFile = () => {
+    fileInputRef.current?.click();
+  };
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-
-  const monthlyTransactions = transactions.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
-
-  const totalIncome = monthlyTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const totalExpenses = monthlyTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-  const totalBalance = transactions.reduce((s, t) => s + (t.type === 'income' ? Number(t.amount) : -Number(t.amount)), 0);
-
-  const formatCurrency = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
-
-  if (loading) {
-    return <div className="animate-pulse space-y-6"><div className="h-32 bg-muted rounded-xl" /><div className="h-96 bg-muted rounded-xl" /></div>;
-  }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      console.log('Selected file:', file.name);
+      // TODO: Handle file upload
+    }
+  };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Your financial overview</p>
-        </div>
-        <AddTransactionDialog onSuccess={fetchTransactions} />
-      </div>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #1E1B4B, #312E81)' }}>
+      {/* Header */}
+      <header className="pt-12 pb-8 px-6 text-center">
+        <motion.h1 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-bold text-white mb-2"
+        >
+          Nong Om
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-secondary text-lg font-medium"
+        >
+          Budget Visualization
+        </motion.p>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Total Balance" value={formatCurrency(totalBalance)} icon={<Wallet className="w-6 h-6" />} delay={0} />
-        <StatCard 
-          title="Monthly Income" 
-          value={formatCurrency(totalIncome)} 
-          icon={<TrendingUp className="w-6 h-6" />} 
-          variant="income" 
-          delay={0.1} 
-          onClick={() => setIncomeDialogOpen(true)} 
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
+        {/* Hidden file inputs */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handleFileChange}
         />
-        <StatCard 
-          title="Monthly Expenses" 
-          value={formatCurrency(totalExpenses)} 
-          icon={<TrendingDown className="w-6 h-6" />} 
-          variant="expense" 
-          delay={0.15} 
-          onClick={() => setExpenseDialogOpen(true)} 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+          className="hidden"
+          onChange={handleFileChange}
         />
-      </div>
 
-      {/* Hidden dialogs for adding transactions */}
-      <AddTransactionDialog 
-        open={expenseDialogOpen} 
-        onOpenChange={setExpenseDialogOpen} 
-        defaultType="expense"
-        onSuccess={fetchTransactions}
-        trigger={null}
-      />
-      <AddTransactionDialog 
-        open={incomeDialogOpen} 
-        onOpenChange={setIncomeDialogOpen} 
-        defaultType="income"
-        onSuccess={fetchTransactions}
-        trigger={null}
-      />
+        {/* Camera Button */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Button
+            onClick={handleOpenCamera}
+            size="lg"
+            className="w-64 h-16 text-lg font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl"
+          >
+            <Camera className="w-6 h-6 mr-3" />
+            ถ่ายรูป
+          </Button>
+        </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BalanceChart transactions={transactions} />
-        <ExpensesPieChart transactions={transactions} />
-      </div>
+        {/* File Button */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Button
+            onClick={handleOpenFile}
+            size="lg"
+            variant="secondary"
+            className="w-64 h-16 text-lg font-semibold shadow-xl"
+          >
+            <FileUp className="w-6 h-6 mr-3" />
+            เลือกไฟล์
+          </Button>
+        </motion.div>
+      </main>
 
-      <RecentTransactions transactions={transactions} />
+      {/* Footer */}
+      <footer className="py-8 text-center">
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-white/70 text-sm"
+        >
+          Made with 💜 for better budgeting
+        </motion.p>
+      </footer>
     </div>
   );
 }
