@@ -208,17 +208,20 @@ export default function Dashboard() {
               className="w-full max-w-sm mt-4 bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30"
             >
               {/* Image Preview */}
-              {previewUrl && (
-                <div className="mb-4 rounded-xl overflow-hidden">
+              {previewUrl ? (
+                <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
                   <img 
                     src={previewUrl} 
                     alt="Preview" 
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-contain"
                   />
+                </div>
+              ) : (
+                <div className="mb-4 rounded-xl overflow-hidden bg-white/10 h-48 flex items-center justify-center">
+                  <p className="text-white/60 text-sm">ไม่สามารถแสดงตัวอย่างไฟล์นี้ได้</p>
                 </div>
               )}
               
-              {/* File Name */}
               <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
               <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
               
