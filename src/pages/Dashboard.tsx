@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { 
-  Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays, 
+import {
+  Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays,
   Tag, ArrowDownCircle, ArrowUpCircle, FileText, Plus, XCircle, RefreshCw,
   Utensils, Car, Film, Pill, Receipt, ShoppingCart, TrendingUp, Package, LucideIcon
 } from 'lucide-react';
@@ -95,31 +95,83 @@ export default function Dashboard() {
     if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
-  const handleAnalyze = () => {
-    if (selectedFile) {
-      console.log('Analyzing file:', selectedFile.name);
-      // Mock result - TODO: Replace with actual OCR/AI analysis
-      // Simulate random success/error for demo
-      const isSuccess = Math.random() > 0.3; // 70% success rate for demo
-      
-      if (isSuccess) {
-        const mockResult: TransactionResult = {
-          date: new Date(),
-          itemName: 'ค่าอาหารกลางวัน',
-          category: 'food',
-          type: 'expense',
-          amount: 150,
-          notes: 'จากใบเสร็จ: ' + selectedFile.name,
+  const handleAnalyze = async () => {
+    if (!selectedFile) return;
+
+    console.log('Analyzing file:', selectedFile.name);
+
+    // Show loading state
+    setViewState('upload'); // Keep on upload but could add loading indicator
+
+    try {
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1]; // Remove data URL prefix
+          resolve(base64Data);
         };
-        setSavedTransaction(mockResult);
-        setViewState('success');
-      } else {
-        setErrorMessage('ไม่สามารถอ่านข้อมูลจากรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
-        setViewState('error');
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+
+      // Send to N8N webhook
+      const response = await fetch('https://kawoat9.app.n8n.cloud/webhook/6aa89004-c110-48c0-b52a-38c98fbe0224', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: { image: base64 } }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      // Clean up
-      handleCancel();
+
+      const text = await response.text();
+      console.log('N8N Response:', text);
+
+      if (!text || !text.trim()) {
+        throw new Error('Server ไม่ได้ส่งข้อมูลกลับมา');
+      }
+
+      const data = JSON.parse(text);
+      console.log('Parsed data:', data);
+
+      // Map Thai field names from N8N response
+      const result: TransactionResult = {
+        date: data['วันที่'] ? new Date(data['วันที่']) : new Date(),
+        itemName: data['ชื่อ'] || data.item || 'ไม่ระบุ',
+        category: mapCategory(data['หมวดหมู่'] || data.category || 'other'),
+        type: (data['ประเภท'] === 'income' || data.type === 'income') ? 'income' : 'expense',
+        amount: parseFloat(data['จำนวนเงิน'] || data.amount || 0),
+        notes: data['หมายเหตุ'] || data.notes || `จากใบเสร็จ: ${selectedFile.name}`,
+      };
+
+      setSavedTransaction(result);
+      setViewState('success');
+    } catch (error) {
+      console.error('Error analyzing receipt:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'ไม่สามารถอ่านข้อมูลจากรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
+      setViewState('error');
     }
+
+    // Clean up
+    handleCancel();
+  };
+
+  // Helper function to map Thai category names to English keys
+  const mapCategory = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      'อาหาร': 'food',
+      'เดินทาง': 'transport',
+      'บันเทิง': 'entertainment',
+      'สุขภาพ': 'healthcare',
+      'ค่าบิล': 'utilities',
+      'ของใช้': 'shopping',
+      'ลงทุน': 'investment',
+      'อื่นๆ': 'other',
+    };
+    return categoryMap[category] || category.toLowerCase() || 'other';
   };
 
   const handleAddNewReceipt = () => {
@@ -145,19 +197,19 @@ export default function Dashboard() {
     <div className="min-h-screen h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%)' }}>
       {/* Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
+        <motion.div
           className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30"
           style={{ background: 'radial-gradient(circle, #C4B5FD 0%, transparent 70%)' }}
           animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
-        <motion.div 
+        <motion.div
           className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-25"
           style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)' }}
           animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
         />
-        <motion.div 
+        <motion.div
           className="absolute top-1/3 right-10 w-32 h-32 rounded-full opacity-20"
           style={{ background: 'radial-gradient(circle, #FBBF24 0%, transparent 70%)' }}
         />
@@ -171,14 +223,14 @@ export default function Dashboard() {
           transition={{ type: "spring", duration: 0.8 }}
           className="mb-3 flex justify-center"
         >
-          <img 
-            src={nongOmLogo} 
-            alt="Nong Om Logo" 
+          <img
+            src={nongOmLogo}
+            alt="Nong Om Logo"
             className="w-24 h-24 object-cover rounded-full drop-shadow-2xl"
           />
         </motion.div>
-        
-        <motion.h1 
+
+        <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -186,7 +238,7 @@ export default function Dashboard() {
         >
           Nong Om
         </motion.h1>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
@@ -241,7 +293,7 @@ export default function Dashboard() {
               >
                 <XCircle className="w-12 h-12 text-red-400" />
               </motion.div>
-              
+
               <motion.h2
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -300,7 +352,7 @@ export default function Dashboard() {
               >
                 <CheckCircle2 className="w-12 h-12 text-green-400" />
               </motion.div>
-              
+
               <motion.h2
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -347,7 +399,7 @@ export default function Dashboard() {
                   const CategoryIcon = catConfig.icon;
                   return (
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center"
                         style={{ backgroundColor: `${catConfig.color}20` }}
                       >
@@ -514,9 +566,9 @@ export default function Dashboard() {
                     {/* Image Preview */}
                     {previewUrl ? (
                       <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
-                        <img 
-                          src={previewUrl} 
-                          alt="Preview" 
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
                           className="w-full h-48 object-contain"
                         />
                       </div>
@@ -525,10 +577,10 @@ export default function Dashboard() {
                         <p className="text-white/60 text-sm">ไม่สามารถแสดงตัวอย่างไฟล์นี้ได้</p>
                       </div>
                     )}
-                    
+
                     <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
                     <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
-                    
+
                     {/* Action Buttons */}
                     <div className="flex gap-3">
                       <Button
@@ -567,7 +619,7 @@ export default function Dashboard() {
 
       {/* Footer */}
       <footer className="relative py-6 text-center">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
