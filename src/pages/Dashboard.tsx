@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { Camera, FileUp, Sparkles, Receipt, ChevronRight } from 'lucide-react';
+import { Camera, FileUp, Sparkles, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import nongOmLogo from '@/assets/nong-om-logo.png';
 
 export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,9 +57,11 @@ export default function Dashboard() {
           transition={{ type: "spring", duration: 0.8 }}
           className="mb-3"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm shadow-xl">
-            <Receipt className="w-8 h-8 text-white" />
-          </div>
+          <img 
+            src={nongOmLogo} 
+            alt="Nong Om Logo" 
+            className="w-24 h-24 object-contain drop-shadow-2xl"
+          />
         </motion.div>
         
         <motion.h1 
