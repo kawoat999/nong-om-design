@@ -27,37 +27,37 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #3730A3 100%)' }}>
+    <div className="min-h-screen h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%)' }}>
       {/* Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
-          className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #8B5CF6 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.3, 0.2] }}
+          className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30"
+          style={{ background: 'radial-gradient(circle, #C4B5FD 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
-          className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-15"
-          style={{ background: 'radial-gradient(circle, #F59E0B 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.25, 0.15] }}
+          className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-25"
+          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)' }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
         />
         <motion.div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5"
-          style={{ background: 'radial-gradient(circle, white 0%, transparent 50%)' }}
+          className="absolute top-1/3 right-10 w-32 h-32 rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #FBBF24 0%, transparent 70%)' }}
         />
       </div>
 
       {/* Header */}
-      <header className="relative pt-16 pb-6 px-6 text-center">
+      <header className="relative pt-12 pb-4 px-6 text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", duration: 0.8 }}
-          className="mb-4"
+          className="mb-3"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-purple-400 shadow-2xl shadow-primary/30">
-            <Receipt className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm shadow-xl">
+            <Receipt className="w-8 h-8 text-white" />
           </div>
         </motion.div>
         
@@ -65,7 +65,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-4xl font-bold text-white mb-2 tracking-tight"
+          className="text-3xl font-bold text-white mb-1 tracking-tight"
         >
           Nong Om
         </motion.h1>
@@ -75,14 +75,14 @@ export default function Dashboard() {
           transition={{ delay: 0.3 }}
           className="flex items-center justify-center gap-2"
         >
-          <Sparkles className="w-4 h-4 text-secondary" />
-          <span className="text-secondary text-lg font-medium">Budget Visualization</span>
-          <Sparkles className="w-4 h-4 text-secondary" />
+          <Sparkles className="w-4 h-4 text-yellow-300" />
+          <span className="text-yellow-200 text-base font-medium">Budget Visualization</span>
+          <Sparkles className="w-4 h-4 text-yellow-300" />
         </motion.div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-5 px-6 py-8">
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-4">
         {/* Hidden file inputs */}
         <input
           ref={cameraInputRef}
@@ -105,15 +105,15 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="w-full max-w-sm bg-white/10 backdrop-blur-lg rounded-2xl p-5 border border-white/20 mb-4"
+          className="w-full max-w-sm bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30 mb-2"
         >
-          <p className="text-white/90 text-center text-sm leading-relaxed">
+          <p className="text-white text-center text-sm leading-relaxed">
             📸 ถ่ายรูปใบเสร็จหรือเลือกไฟล์เพื่อบันทึกรายจ่ายของคุณอัตโนมัติ
           </p>
         </motion.div>
 
         {/* Action Buttons */}
-        <div className="w-full max-w-sm space-y-4">
+        <div className="w-full max-w-sm space-y-3">
           {/* Camera Button */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -123,21 +123,20 @@ export default function Dashboard() {
             <Button
               onClick={handleOpenCamera}
               className={cn(
-                "w-full h-16 text-lg font-semibold rounded-2xl",
-                "bg-gradient-to-r from-primary to-purple-400",
-                "hover:from-primary/90 hover:to-purple-400/90",
-                "text-white shadow-xl shadow-primary/30",
-                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/40",
-                "flex items-center justify-between px-6"
+                "w-full h-14 text-base font-semibold rounded-2xl",
+                "bg-white/90 hover:bg-white",
+                "text-primary shadow-xl",
+                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                "flex items-center justify-between px-5"
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Camera className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-primary" />
                 </div>
                 <span>ถ่ายรูป</span>
               </div>
-              <ChevronRight className="w-5 h-5 opacity-70" />
+              <ChevronRight className="w-5 h-5 opacity-50" />
             </Button>
           </motion.div>
 
@@ -150,21 +149,20 @@ export default function Dashboard() {
             <Button
               onClick={handleOpenFile}
               className={cn(
-                "w-full h-16 text-lg font-semibold rounded-2xl",
-                "bg-gradient-to-r from-secondary to-amber-400",
-                "hover:from-secondary/90 hover:to-amber-400/90",
-                "text-white shadow-xl shadow-secondary/30",
-                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-secondary/40",
-                "flex items-center justify-between px-6"
+                "w-full h-14 text-base font-semibold rounded-2xl",
+                "bg-yellow-400/90 hover:bg-yellow-400",
+                "text-gray-900 shadow-xl",
+                "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                "flex items-center justify-between px-5"
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <FileUp className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-yellow-600/20 flex items-center justify-center">
+                  <FileUp className="w-5 h-5 text-gray-900" />
                 </div>
                 <span>เลือกไฟล์</span>
               </div>
-              <ChevronRight className="w-5 h-5 opacity-70" />
+              <ChevronRight className="w-5 h-5 opacity-50" />
             </Button>
           </motion.div>
         </div>
@@ -174,27 +172,27 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm mt-4 bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/20"
+            className="w-full max-w-sm mt-2 bg-white/20 backdrop-blur-lg rounded-2xl p-3 border border-white/30"
           >
-            <p className="text-white/70 text-sm mb-1">ไฟล์ที่เลือก:</p>
-            <p className="text-white font-medium truncate">{selectedFile.name}</p>
+            <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
+            <p className="text-white font-medium text-sm truncate">{selectedFile.name}</p>
           </motion.div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="relative py-8 text-center">
+      <footer className="relative py-6 text-center">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
           className="flex items-center justify-center gap-2"
         >
-          <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/30" />
-          <p className="text-white/60 text-sm">
-            Made with <span className="text-primary">💜</span> for better budgeting
+          <div className="h-px w-10 bg-gradient-to-r from-transparent to-white/40" />
+          <p className="text-white/80 text-sm">
+            Made with 💜 for better budgeting
           </p>
-          <div className="h-px w-12 bg-gradient-to-l from-transparent to-white/30" />
+          <div className="h-px w-10 bg-gradient-to-l from-transparent to-white/40" />
         </motion.div>
       </footer>
     </div>
