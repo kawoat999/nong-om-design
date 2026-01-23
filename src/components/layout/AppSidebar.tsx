@@ -5,13 +5,13 @@ import {
   PiggyBank, 
   Target, 
   Settings,
-  LogOut,
-  Wallet
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import nongOmLogo from '@/assets/nong-om-logo.png';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -38,9 +38,11 @@ export function AppSidebar({ onClose }: AppSidebarProps) {
       {/* Logo */}
       <div className="p-6 border-b border-sidebar-border">
         <Link to="/dashboard" className="flex items-center gap-3" onClick={handleNavClick}>
-          <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
-            <Wallet className="w-5 h-5 text-sidebar-primary-foreground" />
-          </div>
+          <img 
+            src={nongOmLogo} 
+            alt="Nong Om Logo" 
+            className="w-12 h-12 rounded-full object-cover shadow-md"
+          />
           <div>
             <h1 className="text-lg font-bold tracking-tight">Nong Om</h1>
             <p className="text-xs text-sidebar-foreground/60">Finance Tracker</p>
