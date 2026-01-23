@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
-import { Camera, FileUp, Sparkles, ChevronRight } from 'lucide-react';
+import { Camera, FileUp, Sparkles, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import nongOmLogo from '@/assets/nong-om-logo.png';
 
@@ -9,6 +9,7 @@ export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const handleOpenCamera = () => {
     cameraInputRef.current?.click();
@@ -22,8 +23,30 @@ export default function Dashboard() {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      // Create preview URL for images
+      if (file.type.startsWith('image/')) {
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
       console.log('Selected file:', file.name);
-      // TODO: Handle file upload
+    }
+  };
+
+  const handleCancel = () => {
+    setSelectedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    // Reset file inputs
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  const handleAnalyze = () => {
+    if (selectedFile) {
+      console.log('Analyzing file:', selectedFile.name);
+      // TODO: Implement OCR/analysis
     }
   };
 
@@ -171,16 +194,60 @@ export default function Dashboard() {
         </div>
 
         {/* Selected File Preview */}
-        {selectedFile && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm mt-2 bg-white/20 backdrop-blur-lg rounded-2xl p-3 border border-white/30"
-          >
-            <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
-            <p className="text-white font-medium text-sm truncate">{selectedFile.name}</p>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {selectedFile && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm mt-4 bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30"
+            >
+              {/* Image Preview */}
+              {previewUrl && (
+                <div className="mb-4 rounded-xl overflow-hidden">
+                  <img 
+                    src={previewUrl} 
+                    alt="Preview" 
+                    className="w-full h-48 object-cover"
+                  />
+                </div>
+              )}
+              
+              {/* File Name */}
+              <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
+              <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
+              
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className={cn(
+                    "flex-1 h-11 rounded-xl font-semibold",
+                    "bg-transparent border-2 border-red-400 text-red-100",
+                    "hover:bg-red-500/20 hover:border-red-300",
+                    "transition-all duration-200"
+                  )}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  ยกเลิก
+                </Button>
+                <Button
+                  onClick={handleAnalyze}
+                  className={cn(
+                    "flex-1 h-11 rounded-xl font-semibold",
+                    "bg-white/90 hover:bg-white text-primary",
+                    "shadow-lg hover:shadow-xl",
+                    "transition-all duration-200"
+                  )}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  วิเคราะห์
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       {/* Footer */}
