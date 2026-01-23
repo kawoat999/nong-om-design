@@ -55,12 +55,12 @@ export default function Dashboard() {
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "spring", duration: 0.8 }}
-          className="mb-3"
+          className="mb-3 flex justify-center"
         >
           <img 
             src={nongOmLogo} 
             alt="Nong Om Logo" 
-            className="w-24 h-24 object-contain drop-shadow-2xl"
+            className="w-24 h-24 object-cover rounded-full drop-shadow-2xl"
           />
         </motion.div>
         
