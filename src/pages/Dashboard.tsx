@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Camera, FileUp, Sparkles, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,12 +10,23 @@ export default function Dashboard() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewCardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!selectedFile) return;
+    // Ensure the preview + buttons are visible (especially on smaller screens)
+    requestAnimationFrame(() => {
+      previewCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [selectedFile]);
 
   const handleOpenCamera = () => {
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
     cameraInputRef.current?.click();
   };
 
   const handleOpenFile = () => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
     fileInputRef.current?.click();
   };
 
@@ -25,6 +36,10 @@ export default function Dashboard() {
     if (file) {
       setSelectedFile(file);
       console.log('File type:', file.type);
+
+      // Clean up previous preview URL (prevents memory leaks)
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+
       // Create preview URL for images
       if (file.type.startsWith('image/')) {
         const url = URL.createObjectURL(file);
@@ -113,7 +128,12 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-4">
+      <main
+        className={cn(
+          'flex-1 min-h-0 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto',
+          selectedFile ? 'justify-start' : 'justify-center'
+        )}
+      >
         {/* Hidden file inputs */}
         <input
           ref={cameraInputRef}
@@ -202,6 +222,7 @@ export default function Dashboard() {
         <AnimatePresence>
           {selectedFile && (
             <motion.div
+              ref={previewCardRef}
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -232,8 +253,8 @@ export default function Dashboard() {
                   variant="outline"
                   className={cn(
                     "flex-1 h-11 rounded-xl font-semibold",
-                    "bg-transparent border-2 border-red-400 text-red-100",
-                    "hover:bg-red-500/20 hover:border-red-300",
+                    "bg-transparent border-2 border-destructive/60 text-destructive",
+                    "hover:bg-destructive/10 hover:border-destructive/80",
                     "transition-all duration-200"
                   )}
                 >
