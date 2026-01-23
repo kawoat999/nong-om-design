@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays, Tag, ArrowDownCircle, ArrowUpCircle, FileText, Plus } from 'lucide-react';
+import { 
+  Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays, 
+  Tag, ArrowDownCircle, ArrowUpCircle, FileText, Plus, XCircle, RefreshCw,
+  Utensils, Car, Film, Pill, Receipt, ShoppingCart, TrendingUp, Package, LucideIcon
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -7,19 +11,16 @@ import nongOmLogo from '@/assets/nong-om-logo.png';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
 
-// Category emoji mapping
-const categoryEmojis: Record<string, string> = {
-  housing: '🏠',
-  food: '🍔',
-  transport: '🚗',
-  utilities: '💡',
-  entertainment: '🎬',
-  shopping: '🛍️',
-  healthcare: '🏥',
-  salary: '💰',
-  freelance: '💼',
-  investment: '📈',
-  other: '📋',
+// Category configuration with icons and colors
+const categoryConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
+  food: { icon: Utensils, color: '#F97316', label: 'อาหาร' },
+  transport: { icon: Car, color: '#3B82F6', label: 'เดินทาง' },
+  entertainment: { icon: Film, color: '#EC4899', label: 'บันเทิง' },
+  healthcare: { icon: Pill, color: '#10B981', label: 'สุขภาพ' },
+  utilities: { icon: Receipt, color: '#6366F1', label: 'ค่าบิล' },
+  shopping: { icon: ShoppingCart, color: '#8B5CF6', label: 'ของใช้' },
+  investment: { icon: TrendingUp, color: '#14B8A6', label: 'ลงทุน' },
+  other: { icon: Package, color: '#6B7280', label: 'อื่นๆ' },
 };
 
 interface TransactionResult {
@@ -31,13 +32,16 @@ interface TransactionResult {
   notes?: string;
 }
 
+type ViewState = 'upload' | 'success' | 'error';
+
 export default function Dashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [viewState, setViewState] = useState<ViewState>('upload');
   const [savedTransaction, setSavedTransaction] = useState<TransactionResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const previewCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,24 +99,38 @@ export default function Dashboard() {
     if (selectedFile) {
       console.log('Analyzing file:', selectedFile.name);
       // Mock result - TODO: Replace with actual OCR/AI analysis
-      const mockResult: TransactionResult = {
-        date: new Date(),
-        itemName: 'ค่าอาหารกลางวัน',
-        category: 'food',
-        type: 'expense',
-        amount: 150,
-        notes: 'จากใบเสร็จ: ' + selectedFile.name,
-      };
-      setSavedTransaction(mockResult);
-      setShowSuccess(true);
+      // Simulate random success/error for demo
+      const isSuccess = Math.random() > 0.3; // 70% success rate for demo
+      
+      if (isSuccess) {
+        const mockResult: TransactionResult = {
+          date: new Date(),
+          itemName: 'ค่าอาหารกลางวัน',
+          category: 'food',
+          type: 'expense',
+          amount: 150,
+          notes: 'จากใบเสร็จ: ' + selectedFile.name,
+        };
+        setSavedTransaction(mockResult);
+        setViewState('success');
+      } else {
+        setErrorMessage('ไม่สามารถอ่านข้อมูลจากรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
+        setViewState('error');
+      }
       // Clean up
       handleCancel();
     }
   };
 
   const handleAddNewReceipt = () => {
-    setShowSuccess(false);
+    setViewState('upload');
     setSavedTransaction(null);
+    setErrorMessage('');
+  };
+
+  const handleTryAgain = () => {
+    setViewState('upload');
+    setErrorMessage('');
   };
 
   const formatCurrency = (amount: number) => {
@@ -184,7 +202,7 @@ export default function Dashboard() {
       <main
         className={cn(
           'flex-1 min-h-0 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto',
-          (selectedFile || showSuccess) ? 'justify-start' : 'justify-center'
+          (selectedFile || viewState !== 'upload') ? 'justify-start' : 'justify-center'
         )}
       >
         {/* Hidden file inputs */}
@@ -205,7 +223,66 @@ export default function Dashboard() {
         />
 
         <AnimatePresence mode="wait">
-          {showSuccess && savedTransaction ? (
+          {viewState === 'error' ? (
+            /* Error Page */
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="w-full max-w-sm flex flex-col items-center"
+            >
+              {/* Error Icon */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', delay: 0.1 }}
+                className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-4"
+              >
+                <XCircle className="w-12 h-12 text-red-400" />
+              </motion.div>
+              
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold text-white mb-3"
+              >
+                เกิดข้อผิดพลาด
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="text-white/70 text-center mb-6"
+              >
+                {errorMessage}
+              </motion.p>
+
+              {/* Try Again Button */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="w-full"
+              >
+                <Button
+                  onClick={handleTryAgain}
+                  className={cn(
+                    "w-full h-14 text-base font-semibold rounded-2xl",
+                    "bg-white/90 hover:bg-white",
+                    "text-primary shadow-xl",
+                    "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
+                    "flex items-center justify-center gap-3"
+                  )}
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  ลองใหม่อีกครั้ง
+                </Button>
+              </motion.div>
+            </motion.div>
+          ) : viewState === 'success' && savedTransaction ? (
             /* Success Page */
             <motion.div
               key="success"
@@ -265,15 +342,24 @@ export default function Dashboard() {
                 </div>
 
                 {/* Category */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-xl">
-                    {categoryEmojis[savedTransaction.category] || '📋'}
-                  </div>
-                  <div>
-                    <p className="text-white/60 text-xs">หมวดหมู่</p>
-                    <p className="text-white font-medium capitalize">{savedTransaction.category}</p>
-                  </div>
-                </div>
+                {(() => {
+                  const catConfig = categoryConfig[savedTransaction.category] || categoryConfig.other;
+                  const CategoryIcon = catConfig.icon;
+                  return (
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: `${catConfig.color}20` }}
+                      >
+                        <CategoryIcon className="w-5 h-5" style={{ color: catConfig.color }} />
+                      </div>
+                      <div>
+                        <p className="text-white/60 text-xs">หมวดหมู่</p>
+                        <p className="text-white font-medium">{catConfig.label}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Type */}
                 <div className="flex items-center gap-3">
