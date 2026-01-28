@@ -1,72 +1,88 @@
+// Category Types
+export type CategoryType =
+    | 'food'
+    | 'transport'
+    | 'entertainment'
+    | 'healthcare'
+    | 'utilities'
+    | 'shopping'
+    | 'investment'
+    | 'other';
+
+// Transaction Types
 export type TransactionType = 'income' | 'expense';
 
-export type CategoryType = 
-  | 'housing' 
-  | 'food' 
-  | 'transport' 
-  | 'utilities' 
-  | 'entertainment' 
-  | 'shopping' 
-  | 'healthcare' 
-  | 'salary' 
-  | 'freelance' 
-  | 'investment' 
-  | 'other';
-
-export interface Transaction {
-  id: string;
-  user_id: string;
-  amount: number;
-  description: string;
-  category: CategoryType;
-  type: TransactionType;
-  date: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Goal {
-  id: string;
-  user_id: string;
-  name: string;
-  target_amount: number;
-  current_amount: number;
-  icon: string;
-  color: string;
-  is_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Budget {
-  id: string;
-  user_id: string;
-  category: CategoryType;
-  amount: number;
-  month: number;
-  year: number;
-  created_at: string;
-}
-
-export interface Profile {
-  id: string;
-  user_id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export const CATEGORY_CONFIG: Record<CategoryType, { label: string; icon: string; color: string }> = {
-  housing: { label: 'Housing', icon: 'Home', color: '#6366f1' },
-  food: { label: 'Food & Dining', icon: 'UtensilsCrossed', color: '#f97316' },
-  transport: { label: 'Transport', icon: 'Car', color: '#3b82f6' },
-  utilities: { label: 'Utilities', icon: 'Zap', color: '#eab308' },
-  entertainment: { label: 'Entertainment', icon: 'Gamepad2', color: '#a855f7' },
-  shopping: { label: 'Shopping', icon: 'ShoppingBag', color: '#ec4899' },
-  healthcare: { label: 'Healthcare', icon: 'Heart', color: '#ef4444' },
-  salary: { label: 'Salary', icon: 'Briefcase', color: '#10b981' },
-  freelance: { label: 'Freelance', icon: 'Laptop', color: '#14b8a6' },
-  investment: { label: 'Investment', icon: 'TrendingUp', color: '#22c55e' },
-  other: { label: 'Other', icon: 'MoreHorizontal', color: '#6b7280' },
+// Category Display Configuration
+export const CATEGORY_CONFIG: Record<CategoryType, {
+    icon: string;
+    color: string;
+    label: string;
+    bgColor: string;
+}> = {
+    food: {
+        icon: 'Utensils',
+        color: '#F97316',
+        label: 'Food',
+        bgColor: 'bg-orange-100'
+    },
+    transport: {
+        icon: 'Car',
+        color: '#3B82F6',
+        label: 'Transport',
+        bgColor: 'bg-blue-100'
+    },
+    entertainment: {
+        icon: 'Film',
+        color: '#EC4899',
+        label: 'Entertainment',
+        bgColor: 'bg-pink-100'
+    },
+    healthcare: {
+        icon: 'Pill',
+        color: '#10B981',
+        label: 'Healthcare',
+        bgColor: 'bg-emerald-100'
+    },
+    utilities: {
+        icon: 'Receipt',
+        color: '#6366F1',
+        label: 'Bills',
+        bgColor: 'bg-indigo-100'
+    },
+    shopping: {
+        icon: 'ShoppingCart',
+        color: '#8B5CF6',
+        label: 'Shopping',
+        bgColor: 'bg-violet-100'
+    },
+    investment: {
+        icon: 'TrendingUp',
+        color: '#14B8A6',
+        label: 'Investment',
+        bgColor: 'bg-teal-100'
+    },
+    other: {
+        icon: 'Package',
+        color: '#6B7280',
+        label: 'Other',
+        bgColor: 'bg-gray-100'
+    },
 };
+
+// Transaction Interface
+export interface Transaction {
+    id: string;
+    date: string;
+    type: TransactionType;
+    category: CategoryType;
+    amount: number;
+    description: string;
+    notes?: string;
+}
+
+// Budget Allocation
+export interface BudgetAllocation {
+    category: CategoryType;
+    amount: number;
+    spent: number;
+}
