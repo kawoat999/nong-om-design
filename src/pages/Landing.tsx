@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, PieChart, Target, Shield, ArrowRight, CheckCircle2, Users, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import nongOmLogo from '@/assets/nong-om-mascot.jpg';
 
 const features = [
   {
@@ -59,9 +60,11 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-                <Wallet className="w-5 h-5 text-primary-foreground" />
-              </div>
+              <img
+                src={nongOmLogo}
+                alt="Nong Om Logo"
+                className="w-9 h-9 rounded-xl object-cover shadow-sm"
+              />
               <span className="text-lg font-bold tracking-tight">Nong Om</span>
             </div>
             <nav className="hidden md:flex items-center gap-8">
@@ -97,11 +100,11 @@ export default function Landing() {
               <br />
               <span className="text-primary">Your Money</span>
             </h1>
-            
+
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-xl mx-auto">
               The simple way to track spending, set budgets, and save for your goals. Start for free today.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
               <Link to="/auth">
                 <Button size="lg" className="gap-2 px-8 h-12 text-base shadow-lg hover:shadow-xl transition-shadow">
@@ -302,9 +305,11 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Wallet className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img
+                src={nongOmLogo}
+                alt="Nong Om Logo"
+                className="w-8 h-8 rounded-lg object-cover"
+              />
               <span className="font-semibold">Nong Om</span>
             </div>
             <nav className="flex items-center gap-6 text-sm text-muted-foreground">

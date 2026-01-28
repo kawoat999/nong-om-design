@@ -8,7 +8,9 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+
   signOut: () => Promise<void>;
+  updateProfile: (updates: { fullName?: string; avatarUrl?: string }) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -63,11 +65,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.warn('Sign out API call failed, clearing local session:', error);
+    }
+    // Always clear local state, even if API call fails
+    setUser(null);
+    setSession(null);
+    // Force clear localStorage as backup
+    localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token');
+  };
+
+  const updateProfile = async (updates: { fullName?: string; avatarUrl?: string }) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          full_name: updates.fullName,
+          avatar_url: updates.avatarUrl,
+        },
+      });
+
+      if (error) {
+        const errorMessage = error.message?.toLowerCase() || '';
+        if (errorMessage.includes('failed to fetch') || errorMessage.includes('network error')) {
+          return { error: new Error('Unable to connect to server. Please check your internet connection.') };
+        }
+        return { error };
+      }
+
+      // Manually update local state to reflect changes immediately
+      try {
+        const { data: { session: newSession } } = await supabase.auth.refreshSession();
+        if (newSession) {
+          setSession(newSession);
+          setUser(newSession.user);
+        }
+      } catch (refreshError) {
+        console.warn('Failed to refresh session, but profile was updated:', refreshError);
+      }
+
+      return { error: null };
+    } catch (networkError: any) {
+      console.error('Network error updating profile:', networkError);
+      // Convert network error to a more user-friendly message
+      const errorMessage = networkError.message || 'Failed to update profile';
+      const isFetchError = errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('connection');
+
+      const userFriendlyError = new Error(
+        isFetchError
+          ? 'Unable to connect to server. Please check your internet connection.'
+          : errorMessage
+      );
+      return { error: userFriendlyError };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

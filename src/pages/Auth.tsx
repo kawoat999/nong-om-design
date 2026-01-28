@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Wallet, Mail, Lock, User } from 'lucide-react';
+import { Wallet, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import nongOmLogo from '@/assets/nong-om-logo.jpg';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -54,11 +55,25 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      {/* Back to Landing Button */}
+      <Link
+        to="/"
+        className="absolute top-6 left-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
+      >
+        <div className="p-2 rounded-full bg-muted/50 group-hover:bg-muted transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </div>
+        <span className="text-sm font-medium hidden sm:inline">Back</span>
+      </Link>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <Wallet className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto mb-6">
+            <img
+              src={nongOmLogo}
+              alt="Nong Om Logo"
+              className="w-24 h-24 rounded-3xl shadow-xl mx-auto object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold">Nong Om</h1>
           <p className="text-muted-foreground">Personal Finance Tracker</p>

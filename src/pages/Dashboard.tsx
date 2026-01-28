@@ -1,637 +1,280 @@
-import { useEffect, useRef, useState } from 'react';
-import {
-  Camera, FileUp, Sparkles, ChevronRight, X, CheckCircle2, CalendarDays,
-  Tag, ArrowDownCircle, ArrowUpCircle, FileText, Plus, XCircle, RefreshCw,
-  Utensils, Car, Film, Pill, Receipt, ShoppingCart, TrendingUp, Package, LucideIcon
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Plus, TrendingUp, TrendingDown, Wallet, Loader2, Cloud, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import nongOmLogo from '@/assets/nong-om-logo.png';
-import { format } from 'date-fns';
-import { th } from 'date-fns/locale';
+import { CityView } from '@/components/game/CityView';
+import { AddExpenseModal } from '@/components/game/AddExpenseModal';
+import { budgetService } from '@/services/budgetService';
+import { transactionService } from '@/services/transactionService';
 
-// Category configuration with icons and colors
-const categoryConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
-  food: { icon: Utensils, color: '#F97316', label: 'อาหาร' },
-  transport: { icon: Car, color: '#3B82F6', label: 'เดินทาง' },
-  entertainment: { icon: Film, color: '#EC4899', label: 'บันเทิง' },
-  healthcare: { icon: Pill, color: '#10B981', label: 'สุขภาพ' },
-  utilities: { icon: Receipt, color: '#6366F1', label: 'ค่าบิล' },
-  shopping: { icon: ShoppingCart, color: '#8B5CF6', label: 'ของใช้' },
-  investment: { icon: TrendingUp, color: '#14B8A6', label: 'ลงทุน' },
-  other: { icon: Package, color: '#6B7280', label: 'อื่นๆ' },
-};
-
-interface TransactionResult {
-  date: Date;
-  itemName: string;
-  category: string;
-  type: 'income' | 'expense';
-  amount: number;
-  notes?: string;
-}
-
-type ViewState = 'upload' | 'success' | 'error';
+interface CategorySpending { [key: string]: number; }
 
 export default function Dashboard() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [viewState, setViewState] = useState<ViewState>('upload');
-  const [savedTransaction, setSavedTransaction] = useState<TransactionResult | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const previewCardRef = useRef<HTMLDivElement>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [spending, setSpending] = useState<CategorySpending>({});
+  const [budgetAllocations, setBudgetAllocations] = useState<Record<string, number>>({});
+  const [totalBudget, setTotalBudget] = useState(0);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch Budget
+      const budgetData = await budgetService.fetchBudget();
+      if (budgetData) {
+        setTotalBudget(budgetData.total);
+        setBudgetAllocations(budgetData.allocations);
+      }
+
+      // 2. Fetch Transactions & Calculate Spending
+      const transactions = await transactionService.fetchTransactions();
+      const newSpending: CategorySpending = {};
+
+      transactions.forEach(t => {
+        const cat = t.category.toLowerCase();
+        newSpending[cat] = (newSpending[cat] || 0) + t.amount;
+      });
+      setSpending(newSpending);
+
+    } catch (error) {
+      console.error("Failed to fetch dashboard data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!selectedFile) return;
-    // Ensure the preview + buttons are visible (especially on smaller screens)
-    requestAnimationFrame(() => {
-      previewCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  }, [selectedFile]);
+    fetchData();
+  }, []);
 
-  const handleOpenCamera = () => {
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-    cameraInputRef.current?.click();
+  const handleTransactionSuccess = async (transaction: { category: string; amount: number }) => {
+    // Optimistic Update
+    setSpending(prev => ({
+      ...prev,
+      [transaction.category]: (prev[transaction.category] || 0) + transaction.amount,
+    }));
+    // Re-fetch to be sure
+    await fetchData();
   };
 
-  const handleOpenFile = () => {
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    console.log('File selected:', file);
-    if (file) {
-      setSelectedFile(file);
-      console.log('File type:', file.type);
-
-      // Clean up previous preview URL (prevents memory leaks)
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-
-      // Create preview URL for images
-      if (file.type.startsWith('image/')) {
-        const url = URL.createObjectURL(file);
-        console.log('Preview URL created:', url);
-        setPreviewUrl(url);
-      } else {
-        // Clear preview for non-image files
-        setPreviewUrl(null);
-      }
-    }
-  };
-
-  const handleCancel = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
-    // Reset file inputs
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  };
-
-  const handleAnalyze = async () => {
-    if (!selectedFile) return;
-
-    console.log('Analyzing file:', selectedFile.name);
-
-    // Show loading state
-    setViewState('upload'); // Keep on upload but could add loading indicator
-
-    try {
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          const base64Data = result.split(',')[1]; // Remove data URL prefix
-          resolve(base64Data);
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(selectedFile);
-      });
-
-      // Send to N8N webhook
-      const response = await fetch('https://kawoat9.app.n8n.cloud/webhook/6aa89004-c110-48c0-b52a-38c98fbe0224', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: { image: base64 } }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const text = await response.text();
-      console.log('N8N Response:', text);
-
-      if (!text || !text.trim()) {
-        throw new Error('Server ไม่ได้ส่งข้อมูลกลับมา');
-      }
-
-      const data = JSON.parse(text);
-      console.log('Parsed data:', data);
-
-      // Map Thai field names from N8N response
-      const result: TransactionResult = {
-        date: data['วันที่'] ? new Date(data['วันที่']) : new Date(),
-        itemName: data['ชื่อ'] || data.item || 'ไม่ระบุ',
-        category: mapCategory(data['หมวดหมู่'] || data.category || 'other'),
-        type: (data['ประเภท'] === 'income' || data.type === 'income') ? 'income' : 'expense',
-        amount: parseFloat(data['จำนวนเงิน'] || data.amount || 0),
-        notes: data['หมายเหตุ'] || data.notes || `จากใบเสร็จ: ${selectedFile.name}`,
-      };
-
-      setSavedTransaction(result);
-      setViewState('success');
-    } catch (error) {
-      console.error('Error analyzing receipt:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'ไม่สามารถอ่านข้อมูลจากรูปภาพได้ กรุณาลองใหม่อีกครั้ง');
-      setViewState('error');
-    }
-
-    // Clean up
-    handleCancel();
-  };
-
-  // Helper function to map Thai category names to English keys
-  const mapCategory = (category: string): string => {
-    const categoryMap: Record<string, string> = {
-      'อาหาร': 'food',
-      'เดินทาง': 'transport',
-      'บันเทิง': 'entertainment',
-      'สุขภาพ': 'healthcare',
-      'ค่าบิล': 'utilities',
-      'ของใช้': 'shopping',
-      'ลงทุน': 'investment',
-      'อื่นๆ': 'other',
-    };
-    return categoryMap[category] || category.toLowerCase() || 'other';
-  };
-
-  const handleAddNewReceipt = () => {
-    setViewState('upload');
-    setSavedTransaction(null);
-    setErrorMessage('');
-  };
-
-  const handleTryAgain = () => {
-    setViewState('upload');
-    setErrorMessage('');
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('th-TH', {
-      style: 'currency',
-      currency: 'THB',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const totalSpending = Object.values(spending).reduce((a, b) => a + b, 0);
+  const remaining = totalBudget - totalSpending;
+  const percentage = totalBudget > 0 ? (totalSpending / totalBudget) * 100 : 0;
 
   return (
-    <div className="min-h-screen h-screen flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%)' }}>
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      className="h-full flex flex-col overflow-hidden transition-all duration-500 relative bg-gradient-to-b from-sky-400 via-sky-200 to-white dark:from-[#1a1a2e] dark:via-[#16213e] dark:to-[#0f3460]"
+    >
+      {/* Light Mode Sky Elements */}
+      {/* Light Mode Sky Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden z-0">
+        {/* Sun */}
         <motion.div
-          className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30"
-          style={{ background: 'radial-gradient(circle, #C4B5FD 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.4, 0.3] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1 }}
+          className="absolute top-[28%] left-[-20px] w-32 h-32 bg-yellow-300 rounded-full blur-2xl opacity-60"
         />
+        <Sun className="absolute top-[32%] left-6 w-16 h-16 text-yellow-400 fill-yellow-400 animate-pulse-slow" />
+
+        {/* Clouds */}
         <motion.div
-          className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full opacity-25"
-          style={{ background: 'radial-gradient(circle, #FCD34D 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.35, 0.25] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        />
+          animate={{ x: [0, 20, 0] }}
+          transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+          className="absolute top-[35%] right-10 text-white/80"
+        >
+          <Cloud className="w-16 h-16 fill-white" />
+        </motion.div>
+
         <motion.div
-          className="absolute top-1/3 right-10 w-32 h-32 rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #FBBF24 0%, transparent 70%)' }}
-        />
+          animate={{ x: [0, -15, 0] }}
+          transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 1 }}
+          className="absolute top-[40%] left-1/3 text-white/60"
+        >
+          <Cloud className="w-12 h-12 fill-white" />
+        </motion.div>
+
+        {/* Birds */}
+        <motion.div
+          initial={{ x: -100 }}
+          animate={{ x: "100vw" }}
+          transition={{ repeat: Infinity, duration: 25, ease: "linear" }}
+          className="absolute top-[30%] flex gap-2 opacity-60"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-600 w-4 h-4 transform -scale-x-100">
+            <path d="M2 12s4-2 9-2 9 2 9 2" />
+          </svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-600 w-3 h-3 mt-2 transform -scale-x-100">
+            <path d="M2 12s4-2 9-2 9 2 9 2" />
+          </svg>
+        </motion.div>
       </div>
 
-      {/* Header */}
-      <header className="relative pt-12 pb-4 px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", duration: 0.8 }}
-          className="mb-3 flex justify-center"
-        >
-          <img
-            src={nongOmLogo}
-            alt="Nong Om Logo"
-            className="w-24 h-24 object-cover rounded-full drop-shadow-2xl"
+      {/* Dark Mode Sky Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden dark:block z-0">
+        {/* Stars */}
+        {[...Array(120)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0.1, scale: 0.5 }}
+            animate={{ opacity: [0.1, 0.8, 0.1], scale: [0.5, 1, 0.5] }}
+            transition={{
+              duration: Math.random() * 3 + 2,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: "easeInOut",
+            }}
+            className="absolute rounded-full bg-white shadow-[0_0_1px_#fff]"
+            style={{
+              top: `${Math.random() * 60}%`,
+              left: `${Math.random() * 100}%`,
+              width: Math.random() * 2 + 0.5 + 'px',
+              height: Math.random() * 2 + 0.5 + 'px',
+            }}
           />
-        </motion.div>
+        ))}
+        {/* Realistic Moon */}
+        <div className="absolute top-[38%] left-4">
+          {/* Outer Glow */}
+          <div className="absolute -inset-8 bg-gradient-radial from-white/10 via-white/5 to-transparent rounded-full blur-2xl" />
 
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-3xl font-bold text-white mb-1 tracking-tight"
-        >
-          Nong Om
-        </motion.h1>
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center justify-center gap-2"
-        >
-          <Sparkles className="w-4 h-4 text-yellow-300" />
-          <span className="text-yellow-200 text-base font-medium">Budget Visualization</span>
-          <Sparkles className="w-4 h-4 text-yellow-300" />
-        </motion.div>
-      </header>
+          {/* Main Moon Body */}
+          <div
+            className="relative w-20 h-20 rounded-full overflow-hidden"
+            style={{
+              background: 'radial-gradient(circle at 35% 35%, #f5f5f0 0%, #d4d4cc 30%, #b8b8b0 60%, #9a9a92 100%)',
+              boxShadow: '0 0 40px rgba(255,255,255,0.2), 0 0 80px rgba(255,255,255,0.1), inset -8px -8px 20px rgba(0,0,0,0.3), inset 3px 3px 10px rgba(255,255,255,0.4)'
+            }}
+          >
+            {/* Terminator Shadow (dark edge) */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(120deg, transparent 40%, rgba(30,30,40,0.6) 80%, rgba(20,20,30,0.8) 100%)'
+              }}
+            />
 
-      {/* Main Content */}
-      <main
-        className={cn(
-          'flex-1 min-h-0 flex flex-col items-center gap-4 px-6 py-4 overflow-y-auto',
-          (selectedFile || viewState !== 'upload') ? 'justify-start' : 'justify-center'
-        )}
-      >
-        {/* Hidden file inputs */}
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+            {/* Large Craters (Mare) */}
+            <div className="absolute top-[15%] left-[20%] w-6 h-6 rounded-full bg-gradient-radial from-[#9a9a8a] to-transparent opacity-60" />
+            <div className="absolute top-[35%] left-[45%] w-8 h-7 rounded-full bg-gradient-radial from-[#8a8a7a] to-transparent opacity-50" />
+            <div className="absolute top-[55%] left-[25%] w-5 h-5 rounded-full bg-gradient-radial from-[#8a8a78] to-transparent opacity-55" />
 
-        <AnimatePresence mode="wait">
-          {viewState === 'error' ? (
-            /* Error Page */
+            {/* Small Craters */}
+            <div className="absolute top-[20%] right-[25%] w-3 h-3 rounded-full bg-[#b0b0a0] shadow-[inset_1px_1px_2px_rgba(0,0,0,0.4),inset_-0.5px_-0.5px_1px_rgba(255,255,255,0.3)]" />
+            <div className="absolute top-[45%] left-[15%] w-2 h-2 rounded-full bg-[#a8a8a0] shadow-[inset_0.5px_0.5px_1px_rgba(0,0,0,0.4)]" />
+            <div className="absolute bottom-[25%] right-[35%] w-2.5 h-2.5 rounded-full bg-[#a5a598] shadow-[inset_0.5px_0.5px_1px_rgba(0,0,0,0.35)]" />
+            <div className="absolute top-[60%] right-[20%] w-1.5 h-1.5 rounded-full bg-[#b5b5a8] shadow-[inset_0.5px_0.5px_1px_rgba(0,0,0,0.3)]" />
+            <div className="absolute bottom-[35%] left-[40%] w-2 h-2 rounded-full bg-[#a0a090] shadow-[inset_0.5px_0.5px_1px_rgba(0,0,0,0.35)]" />
+            <div className="absolute top-[30%] left-[60%] w-1 h-1 rounded-full bg-[#aaaaaa] shadow-[inset_0.3px_0.3px_0.5px_rgba(0,0,0,0.4)]" />
+
+            {/* Highlight Rim */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.3) 0%, transparent 50%)'
+              }}
+            />
+          </div>
+
+          {/* Atmospheric Halo */}
+          <div className="absolute -inset-4 rounded-full border border-white/5" />
+          <div className="absolute -inset-2 rounded-full bg-gradient-radial from-white/5 to-transparent" />
+        </div>
+      </div>
+      {/* Header - Responsive padding */}
+      <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4">
+        {/* Title - Responsive size */}
+        <div className="text-center relative z-10">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800 dark:text-white drop-shadow-sm">
+            Your Financial City
+          </h1>
+        </div>
+
+        {/* Stats Cards - Responsive grid */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-2">
+          {/* Budget */}
+          <div className="bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-5 text-center shadow-lg border border-white/20 dark:border-white/5 transition-colors">
+            <Wallet className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-300 mx-auto mb-1 sm:mb-2" />
+            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-purple-200/80 uppercase tracking-wider font-medium">Monthly Budget</p>
+            <p className="text-sm sm:text-lg md:text-xl font-bold text-slate-800 dark:text-white mt-0.5">
+              {loading ? '...' : `฿${totalBudget.toLocaleString()}`}
+            </p>
+          </div>
+          {/* Spent */}
+          <div className="bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-5 text-center shadow-lg border border-white/20 dark:border-white/5 transition-colors">
+            <TrendingDown className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-300 mx-auto mb-1 sm:mb-2" />
+            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-red-200/80 uppercase tracking-wider font-medium">Spent</p>
+            <p className="text-sm sm:text-lg md:text-xl font-bold text-red-600 dark:text-red-100 mt-0.5">
+              {loading ? '...' : `฿${totalSpending.toLocaleString()}`}
+            </p>
+          </div>
+          {/* Remaining */}
+          <div className="bg-white/60 dark:bg-white/10 backdrop-blur-md rounded-xl sm:rounded-2xl p-3 sm:p-5 text-center shadow-lg border border-white/20 dark:border-white/5 transition-colors">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-300 mx-auto mb-1 sm:mb-2" />
+            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-emerald-200/80 uppercase tracking-wider font-medium">Remaining</p>
+            <p className="text-sm sm:text-lg md:text-xl font-bold text-emerald-600 dark:text-emerald-100 mt-0.5">
+              {loading ? '...' : `฿${remaining.toLocaleString()}`}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div>
+          <div className="h-1.5 sm:h-2 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              key="error"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm flex flex-col items-center"
-            >
-              {/* Error Icon */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.1 }}
-                className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-4"
-              >
-                <XCircle className="w-12 h-12 text-red-400" />
-              </motion.div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl font-bold text-white mb-3"
-              >
-                เกิดข้อผิดพลาด
-              </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-white/70 text-center mb-6"
-              >
-                {errorMessage}
-              </motion.p>
-
-              {/* Try Again Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="w-full"
-              >
-                <Button
-                  onClick={handleTryAgain}
-                  className={cn(
-                    "w-full h-14 text-base font-semibold rounded-2xl",
-                    "bg-white/90 hover:bg-white",
-                    "text-primary shadow-xl",
-                    "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                    "flex items-center justify-center gap-3"
-                  )}
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  ลองใหม่อีกครั้ง
-                </Button>
-              </motion.div>
-            </motion.div>
-          ) : viewState === 'success' && savedTransaction ? (
-            /* Success Page */
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="w-full max-w-sm flex flex-col items-center"
-            >
-              {/* Success Icon */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.1 }}
-                className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-4"
-              >
-                <CheckCircle2 className="w-12 h-12 text-green-400" />
-              </motion.div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl font-bold text-white mb-6"
-              >
-                บันทึกสำเร็จ!
-              </motion.h2>
-
-              {/* Transaction Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="w-full bg-white/20 backdrop-blur-lg rounded-2xl p-5 border border-white/30 space-y-4"
-              >
-                {/* Date */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <CalendarDays className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white/60 text-xs">วันที่</p>
-                    <p className="text-white font-medium">
-                      {format(savedTransaction.date, 'd MMMM yyyy', { locale: th })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Item Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white/60 text-xs">รายการ</p>
-                    <p className="text-white font-medium">{savedTransaction.itemName}</p>
-                  </div>
-                </div>
-
-                {/* Category */}
-                {(() => {
-                  const catConfig = categoryConfig[savedTransaction.category] || categoryConfig.other;
-                  const CategoryIcon = catConfig.icon;
-                  return (
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${catConfig.color}20` }}
-                      >
-                        <CategoryIcon className="w-5 h-5" style={{ color: catConfig.color }} />
-                      </div>
-                      <div>
-                        <p className="text-white/60 text-xs">หมวดหมู่</p>
-                        <p className="text-white font-medium">{catConfig.label}</p>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Type */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    {savedTransaction.type === 'income' ? (
-                      <ArrowDownCircle className="w-5 h-5 text-green-400" />
-                    ) : (
-                      <ArrowUpCircle className="w-5 h-5 text-red-400" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white/60 text-xs">ประเภท</p>
-                    <p className={cn(
-                      "font-medium",
-                      savedTransaction.type === 'income' ? 'text-green-400' : 'text-red-400'
-                    )}>
-                      {savedTransaction.type === 'income' ? 'รายรับ' : 'รายจ่าย'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Amount */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-                    <Tag className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white/60 text-xs">จำนวนเงิน</p>
-                    <p className="text-xl font-bold" style={{ color: '#F59E0B' }}>
-                      {formatCurrency(savedTransaction.amount)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Notes */}
-                {savedTransaction.notes && (
-                  <div className="pt-3 border-t border-white/20">
-                    <p className="text-white/60 text-xs mb-1">หมายเหตุ</p>
-                    <p className="text-white/90 text-sm">{savedTransaction.notes}</p>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Add New Receipt Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="w-full mt-6"
-              >
-                <Button
-                  onClick={handleAddNewReceipt}
-                  className={cn(
-                    "w-full h-14 text-base font-semibold rounded-2xl",
-                    "bg-white/90 hover:bg-white",
-                    "text-primary shadow-xl",
-                    "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                    "flex items-center justify-center gap-3"
-                  )}
-                >
-                  <Plus className="w-5 h-5" />
-                  เพิ่มใบเสร็จใหม่
-                </Button>
-              </motion.div>
-            </motion.div>
-          ) : (
-            /* Upload UI */
-            <motion.div
-              key="upload"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full max-w-sm flex flex-col items-center"
-            >
-              {/* Instruction Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="w-full bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30 mb-4"
-              >
-                <p className="text-white text-center text-sm leading-relaxed">
-                  📸 ถ่ายรูปใบเสร็จหรือเลือกไฟล์เพื่อบันทึกรายจ่ายของคุณอัตโนมัติ
-                </p>
-              </motion.div>
-
-              {/* Action Buttons */}
-              <div className="w-full space-y-3">
-                {/* Camera Button */}
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, type: "spring" }}
-                >
-                  <Button
-                    onClick={handleOpenCamera}
-                    className={cn(
-                      "w-full h-14 text-base font-semibold rounded-2xl",
-                      "bg-white/90 hover:bg-white",
-                      "text-primary shadow-xl",
-                      "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                      "flex items-center justify-between px-5"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Camera className="w-5 h-5 text-primary" />
-                      </div>
-                      <span>ถ่ายรูป</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 opacity-50" />
-                  </Button>
-                </motion.div>
-
-                {/* File Button */}
-                <motion.div
-                  initial={{ opacity: 0, x: 30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, type: "spring" }}
-                >
-                  <Button
-                    onClick={handleOpenFile}
-                    className={cn(
-                      "w-full h-14 text-base font-semibold rounded-2xl",
-                      "bg-yellow-400/90 hover:bg-yellow-400",
-                      "text-gray-900 shadow-xl",
-                      "transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl",
-                      "flex items-center justify-between px-5"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-yellow-600/20 flex items-center justify-center">
-                        <FileUp className="w-5 h-5 text-gray-900" />
-                      </div>
-                      <span>เลือกไฟล์</span>
-                    </div>
-                    <ChevronRight className="w-5 h-5 opacity-50" />
-                  </Button>
-                </motion.div>
-              </div>
-
-              {/* Selected File Preview */}
-              <AnimatePresence>
-                {selectedFile && (
-                  <motion.div
-                    ref={previewCardRef}
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="w-full mt-4 bg-white/20 backdrop-blur-lg rounded-2xl p-4 border border-white/30"
-                  >
-                    {/* Image Preview */}
-                    {previewUrl ? (
-                      <div className="mb-4 rounded-xl overflow-hidden bg-black/20">
-                        <img
-                          src={previewUrl}
-                          alt="Preview"
-                          className="w-full h-48 object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <div className="mb-4 rounded-xl overflow-hidden bg-white/10 h-48 flex items-center justify-center">
-                        <p className="text-white/60 text-sm">ไม่สามารถแสดงตัวอย่างไฟล์นี้ได้</p>
-                      </div>
-                    )}
-
-                    <p className="text-white/80 text-xs mb-1">ไฟล์ที่เลือก:</p>
-                    <p className="text-white font-medium text-sm truncate mb-4">{selectedFile.name}</p>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={handleCancel}
-                        variant="outline"
-                        className={cn(
-                          "flex-1 h-11 rounded-xl font-semibold",
-                          "bg-transparent border-2 border-destructive/60 text-destructive",
-                          "hover:bg-destructive/10 hover:border-destructive/80",
-                          "transition-all duration-200"
-                        )}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        ยกเลิก
-                      </Button>
-                      <Button
-                        onClick={handleAnalyze}
-                        className={cn(
-                          "flex-1 h-11 rounded-xl font-semibold",
-                          "bg-white/90 hover:bg-white text-primary",
-                          "shadow-lg hover:shadow-xl",
-                          "transition-all duration-200"
-                        )}
-                      >
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        วิเคราะห์
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      {/* Footer */}
-      <footer className="relative py-6 text-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="flex items-center justify-center gap-2"
-        >
-          <div className="h-px w-10 bg-gradient-to-r from-transparent to-white/40" />
-          <p className="text-white/80 text-sm">
-            Made with 💜 for better budgeting
+              className={cn(
+                "h-full rounded-full",
+                percentage > 100 ? "bg-red-500" : percentage > 80 ? "bg-yellow-500" : "bg-green-500"
+              )}
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(percentage, 100)}%` }}
+              transition={{ duration: 0.8 }}
+            />
+          </div>
+          <p className="text-[10px] sm:text-xs text-slate-600 dark:text-white/50 text-center mt-0.5 sm:mt-1 font-medium">
+            Spent {percentage.toFixed(0)}% of total budget
           </p>
-          <div className="h-px w-10 bg-gradient-to-l from-transparent to-white/40" />
-        </motion.div>
-      </footer>
+        </div>
+      </div>
+
+      {/* City View */}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/20 backdrop-blur-sm">
+            <Loader2 className="w-10 h-10 text-white animate-spin" />
+          </div>
+        )}
+        <CityView spending={spending} budgets={budgetAllocations} />
+      </div>
+
+      {/* FAB - Responsive size and position */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", delay: 0.3 }}
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40"
+      >
+        <Button
+          onClick={() => setIsModalOpen(true)}
+          className={cn(
+            "w-12 h-12 sm:w-14 sm:h-14 rounded-full",
+            "bg-gradient-to-r from-yellow-400 to-orange-500",
+            "hover:from-yellow-500 hover:to-orange-600",
+            "shadow-xl hover:shadow-2xl",
+            "transition-all duration-300 hover:scale-110"
+          )}
+        >
+          <Plus className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+        </Button>
+      </motion.div>
+
+      {/* Modal */}
+      <AddExpenseModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleTransactionSuccess}
+      />
     </div>
   );
 }
