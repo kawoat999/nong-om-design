@@ -25,7 +25,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="min-h-dvh flex w-full bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 flex-shrink-0">
         <div className="fixed top-0 left-0 h-screen w-64">
@@ -41,7 +41,7 @@ export function AppLayout() {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-dvh">
         <AppHeader onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1">
           <Outlet />
